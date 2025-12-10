@@ -1,0 +1,35 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: booking
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/booking-service-db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  sql:
+    init:
+      mode: always
+  cloud:
+    function:
+      definition: bookingProducer
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+          auto-create-topics: true
+      default:
+        contentType: application/json
+      bindings:
+        bookingProducer-out-0:
+          destination: booking-events-topic
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://server1:8761/eureka/,http://server2:8762/eureka/,http://server3:8763/eureka/

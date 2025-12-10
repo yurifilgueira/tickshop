@@ -1,0 +1,60 @@
+server:
+  port: 9093
+
+spring:
+  application:
+    name: tickets
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/ticket-service-db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  sql:
+    init:
+      mode: always
+  cloud:
+    function:
+      definition: bookingEventProcessor
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+          auto-create-topics: true
+        bindings:
+          bookingEventProcessor-out-0:
+            producer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
+      default:
+        contentType: application/json
+      bindings:
+        bookingEventProcessor-in-0:
+          destination: booking-events-topic
+          group: ticket-service-group
+        bookingEventProcessor-out-0:
+          destination: ticket-events-topic
+
+#logging:
+#  level:
+#    # Logs gerais do Spring Cloud Stream (você já tem)
+#    org.springframework.cloud.stream: DEBUG
+#    org.springframework.integration: DEBUG
+#
+#    # 1. Ver o Container do Kafka (Início, parada, entrega de mensagens)
+#    org.springframework.kafka: DEBUG
+#
+#    # 2. Ver o Cliente do Kafka (Consumidor interno)
+#    # Isso vai mostrar se ele está entrando no grupo (Rebalance) ou buscando dados (Fetch)
+#    org.apache.kafka.clients.consumer: DEBUG
+#    org.apache.kafka.clients.consumer.internals.ConsumerCoordinator: DEBUG
+#
+#    # 3. Ver se o problema é na conversão de JSON (Deserialização)
+#    org.springframework.kafka.support.converter: DEBUG
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://server1:8761/eureka/,http://server2:8762/eureka/,http://server3:8763/eureka/

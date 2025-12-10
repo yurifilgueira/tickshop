@@ -1,0 +1,19 @@
+server:
+  port: 9091
+
+spring:
+  application:
+    name: payment
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/payment-service-db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://server1:8761/eureka/,http://server2:8762/eureka/,http://server3:8763/eureka/

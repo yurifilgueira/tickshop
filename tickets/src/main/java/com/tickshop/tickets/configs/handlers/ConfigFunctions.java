@@ -1,0 +1,83 @@
+package com.tickshop.tickets.configs.handlers;
+
+import com.tickshop.tickets.events.booking.events.BookingEvent;
+import com.tickshop.tickets.events.impl.events.TicketEvent;
+import com.tickshop.tickets.events.impl.events.TicketEvent.TicketReservationFailed;
+import com.tickshop.tickets.events.impl.events.TicketEvent.TicketReserved;
+import com.tickshop.tickets.services.TicketService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+import java.util.UUID;
+import java.util.function.Function;
+
+@Configuration
+public class ConfigFunctions {
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigFunctions.class);
+    private final TicketService ticketService;
+
+    public ConfigFunctions(TicketService ticketService) {
+        this.ticketService = ticketService;
+    }
+
+    @Bean
+    public Function<Flux<Message<BookingEvent.BookingCreated>>, Flux<Message<TicketEvent>>> bookingEventProcessor() {
+        log.info("############## Function running");
+        return flux -> flux
+                .doOnNext(msg -> log.info("Recebido evento de Booking: {}", msg.getPayload()))
+                .flatMap(this::processMessage);
+    }
+
+    private Mono<Message<TicketEvent>> processMessage(Message<BookingEvent.BookingCreated> message) {
+        BookingEvent payload = message.getPayload();
+
+        // Se não for o evento que esperamos, retornamos vazio.
+        // O Spring entende que o processamento acabou e dá o ACK automático.
+        if (!(payload instanceof BookingEvent.BookingCreated e)) {
+            return Mono.empty();
+        }
+
+        return ticketService.reserveTickets(e.bookingId(), e.showId(), e.ticketsQtt())
+                .collectList()
+                .flatMap(tickets -> {
+                    if (tickets.isEmpty()) {
+                        return Mono.error(new RuntimeException("Nenhum ingresso reservado"));
+                    }
+                    return Mono.just((TicketEvent) new TicketReserved(
+                            e.bookingId(),
+                            tickets.get(0).ticketId(),
+                            Instant.now()
+                    ));
+                })
+                .onErrorResume(ex -> {
+                    log.warn("Erro ao reservar tickets para booking {}: {}", e.bookingId(), ex.getMessage());
+                    // Retornamos um evento de falha para ser enviado ao tópico de saída
+                    return Mono.just(new TicketReservationFailed(
+                            e.bookingId(),
+                            ex.getMessage() != null ? ex.getMessage() : "Erro desconhecido",
+                            Instant.now()
+                    ));
+                })
+                .map(responseEvent -> MessageBuilder.withPayload(responseEvent)
+                        .setHeader(KafkaHeaders.KEY, extractKey(responseEvent))
+                        .build());
+    }
+
+    private String extractKey(TicketEvent event) {
+        if (event instanceof TicketReserved r) {
+            return r.bookingId().toString();
+        } else if (event instanceof TicketReservationFailed f) {
+            return f.bookingId().toString();
+        }
+        return UUID.randomUUID().toString();
+    }
+}
