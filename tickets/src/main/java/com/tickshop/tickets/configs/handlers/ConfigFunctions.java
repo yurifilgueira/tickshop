@@ -40,8 +40,6 @@ public class ConfigFunctions {
     private Mono<Message<TicketEvent>> processMessage(Message<BookingEvent.BookingCreated> message) {
         BookingEvent payload = message.getPayload();
 
-        // Se não for o evento que esperamos, retornamos vazio.
-        // O Spring entende que o processamento acabou e dá o ACK automático.
         if (!(payload instanceof BookingEvent.BookingCreated e)) {
             return Mono.empty();
         }
@@ -50,7 +48,7 @@ public class ConfigFunctions {
                 .collectList()
                 .flatMap(tickets -> {
                     if (tickets.isEmpty()) {
-                        return Mono.error(new RuntimeException("Nenhum ingresso reservado"));
+                        return Mono.error(new RuntimeException("No tickets reserved"));
                     }
                     return Mono.just((TicketEvent) new TicketReserved(
                             e.bookingId(),
@@ -59,11 +57,10 @@ public class ConfigFunctions {
                     ));
                 })
                 .onErrorResume(ex -> {
-                    log.warn("Erro ao reservar tickets para booking {}: {}", e.bookingId(), ex.getMessage());
-                    // Retornamos um evento de falha para ser enviado ao tópico de saída
+                    log.warn("Error reserving tickets for booking {}: {}", e.bookingId(), ex.getMessage());
                     return Mono.just(new TicketReservationFailed(
                             e.bookingId(),
-                            ex.getMessage() != null ? ex.getMessage() : "Erro desconhecido",
+                            ex.getMessage() != null ? ex.getMessage() : "Unknown error",
                             Instant.now()
                     ));
                 })
