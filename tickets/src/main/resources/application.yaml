@@ -19,45 +19,36 @@ spring:
         binder:
           brokers: localhost:9092
           auto-create-topics: true
-        bindings:
-          bookingEventProcessor-out-0:
-            producer:
-              configuration:
-                key.serializer: org.apache.kafka.common.serialization.StringSerializer
-          paymentConfirmationProcessor-out-0:
-            producer:
-              configuration:
-                key.serializer: org.apache.kafka.common.serialization.StringSerializer
-      default:
-        contentType: application/json
+          producer-properties:
+            key.serializer: org.apache.kafka.common.serialization.StringSerializer
       bindings:
         bookingEventProcessor-in-0:
           destination: booking-events-topic
           group: booking-ticket-service-group
+          content-type: application/json
         bookingEventProcessor-out-0:
           destination: ticket-events-topic
+          content-type: application/json
         paymentConfirmationProcessor-in-0:
+          content-type: application/json
           destination: payment-events-topic
           group: payment-ticket-service-group
         paymentConfirmationProcessor-out-0:
           destination: payment-ticket-events-topic
+          content-type: application/json
 
 
 #logging:
 #  level:
-#    # Logs gerais do Spring Cloud Stream (você já tem)
 #    org.springframework.cloud.stream: DEBUG
 #    org.springframework.integration: DEBUG
 #
-#    # 1. Ver o Container do Kafka (Início, parada, entrega de mensagens)
 #    org.springframework.kafka: DEBUG
 #
-#    # 2. Ver o Cliente do Kafka (Consumidor interno)
 #    # Isso vai mostrar se ele está entrando no grupo (Rebalance) ou buscando dados (Fetch)
 #    org.apache.kafka.clients.consumer: DEBUG
 #    org.apache.kafka.clients.consumer.internals.ConsumerCoordinator: DEBUG
 #
-#    # 3. Ver se o problema é na conversão de JSON (Deserialização)
 #    org.springframework.kafka.support.converter: DEBUG
 
 eureka:

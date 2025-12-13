@@ -1,6 +1,8 @@
 package com.tickshop.tickets.configs.handlers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickshop.tickets.events.booking.events.BookingEvent;
+import com.tickshop.tickets.events.impl.eventprocessors.BookingEventProcessor;
 import com.tickshop.tickets.events.impl.events.TicketEvent;
 import com.tickshop.tickets.events.impl.events.TicketEvent.TicketReservationFailed;
 import com.tickshop.tickets.events.impl.events.TicketEvent.TicketReserved;
@@ -20,7 +22,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Configuration
-public class BookingHandlers {
+public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(BookingHandlers.class);
     private final TicketService ticketService;
@@ -30,19 +32,16 @@ public class BookingHandlers {
     }
 
     @Bean
-    public Function<Flux<Message<BookingEvent.BookingCreated>>, Flux<Message<TicketEvent>>> bookingEventProcessor() {
+    public Function<Flux<Message<BookingEvent>>, Flux<Message<TicketEvent>>> bookingEventProcessor() {
         return flux -> flux
-                .doOnNext(msg -> log.info("Recebido evento de Booking: {}", msg.getPayload()))
-                .flatMap(this::processMessage);
+                .doOnNext(msg -> log.info("Booking Event received {}", msg.getPayload()))
+                .map(Message::getPayload)
+                .flatMap(this::process)
+                .map(responseEvent -> MessageBuilder.withPayload(responseEvent).build());
     }
 
-    private Mono<Message<TicketEvent>> processMessage(Message<BookingEvent.BookingCreated> message) {
-        BookingEvent payload = message.getPayload();
-
-        if (!(payload instanceof BookingEvent.BookingCreated e)) {
-            return Mono.empty();
-        }
-
+    @Override
+    public Mono<TicketEvent> handle(BookingEvent.BookingCreated e) {
         return ticketService.reserveTickets(e.bookingId(), e.showId(), e.ticketsQtt())
                 .collectList()
                 .flatMap(tickets -> {
@@ -62,18 +61,16 @@ public class BookingHandlers {
                             ex.getMessage() != null ? ex.getMessage() : "Unknown error",
                             Instant.now()
                     ));
-                })
-                .map(responseEvent -> MessageBuilder.withPayload(responseEvent)
-                        .setHeader(KafkaHeaders.KEY, extractKey(responseEvent))
-                        .build());
+                });
     }
 
-    private String extractKey(TicketEvent event) {
-        if (event instanceof TicketReserved r) {
-            return r.bookingId().toString();
-        } else if (event instanceof TicketReservationFailed f) {
-            return f.bookingId().toString();
-        }
-        return UUID.randomUUID().toString();
+    @Override
+    public Mono<TicketEvent> handle(BookingEvent.BookingCancelled ticketReservationFailed) {
+        return null;
+    }
+
+    @Override
+    public Mono<TicketEvent> handle(BookingEvent.BookingCompleted bookingCompleted) {
+        return null;
     }
 }

@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 public class BookingStreamsConfig {
 
     @Bean
-    public Supplier<Flux<BookingEvent.BookingCreated>> bookingProducer(BookingEventPublisher publisher) {
+    public Supplier<Flux<BookingEvent>> bookingProducer(BookingEventPublisher publisher) {
         return publisher::getFlux;
     }
 }

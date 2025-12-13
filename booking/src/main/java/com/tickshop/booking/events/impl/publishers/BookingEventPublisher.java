@@ -16,9 +16,9 @@ public class BookingEventPublisher implements EventPublisher<BookingEvent> {
         sink.emitNext(event, Sinks.EmitFailureHandler.FAIL_FAST);
     }
 
-    public Flux<BookingEvent.BookingCreated> getFlux() {
+    public Flux<BookingEvent> getFlux() {
         return sink.asFlux()
-                .ofType(BookingEvent.BookingCreated.class);
+                .ofType(BookingEvent.class);
     }
 
 }
