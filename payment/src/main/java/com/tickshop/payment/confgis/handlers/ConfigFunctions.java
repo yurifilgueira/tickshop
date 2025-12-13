@@ -28,7 +28,6 @@ public class ConfigFunctions {
 
     @Bean
     public Function<Flux<Message<TicketEvent.TicketReserved>>, Flux<Message<PaymentEvent>>> ticketReservedHandler() {
-        log.info("############## Function running");
         return flux -> flux
                 .doOnNext(msg  -> log.info("Ticket event received: {}", msg.getPayload()))
                 .flatMap(this::processMessage);

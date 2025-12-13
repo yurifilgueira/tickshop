@@ -25,7 +25,6 @@ public class TicketEventHandler {
 
     @Bean
     public Consumer<Flux<Message<TicketEvent.TicketSold>>> soldTicketEventHandler() {
-        log.info("############## TicketEventHandler running");
         return flux -> flux
                 .doOnNext(msg -> log.info("Sold ticket event received: {}", msg.getPayload()))
                 .flatMap(this::processMessage)

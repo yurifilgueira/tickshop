@@ -31,7 +31,6 @@ public class BookingHandlers {
 
     @Bean
     public Function<Flux<Message<BookingEvent.BookingCreated>>, Flux<Message<TicketEvent>>> bookingEventProcessor() {
-        log.info("############## Function running");
         return flux -> flux
                 .doOnNext(msg -> log.info("Recebido evento de Booking: {}", msg.getPayload()))
                 .flatMap(this::processMessage);

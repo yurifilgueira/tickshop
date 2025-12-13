@@ -28,7 +28,6 @@ public class PaymentHandlers {
 
     @Bean
     public Function<Flux<Message<PaymentEvent.PaymentProcessed>>, Flux<Message<TicketEvent>>> paymentConfirmationProcessor() {
-        log.info("############## Function running");
         return flux -> flux
                 .doOnNext(msg -> log.info("Payment confirmed, launching ticket: {}", msg.getPayload().bookingId()))
                 .flatMap(this::launchTicket);
