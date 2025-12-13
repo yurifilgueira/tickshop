@@ -13,7 +13,7 @@ spring:
       mode: always
   cloud:
     function:
-      definition: bookingEventProcessor
+      definition: bookingEventProcessor;paymentConfirmationProcessor
     stream:
       kafka:
         binder:
@@ -24,14 +24,24 @@ spring:
             producer:
               configuration:
                 key.serializer: org.apache.kafka.common.serialization.StringSerializer
+          paymentConfirmationProcessor-out-0:
+            producer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
       default:
         contentType: application/json
       bindings:
         bookingEventProcessor-in-0:
           destination: booking-events-topic
-          group: ticket-service-group
+          group: booking-ticket-service-group
         bookingEventProcessor-out-0:
           destination: ticket-events-topic
+        paymentConfirmationProcessor-in-0:
+          destination: payment-events-topic
+          group: payment-ticket-service-group
+        paymentConfirmationProcessor-out-0:
+          destination: payment-ticket-events-topic
+
 
 #logging:
 #  level:

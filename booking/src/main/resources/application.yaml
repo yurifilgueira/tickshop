@@ -13,17 +13,26 @@ spring:
       mode: always
   cloud:
     function:
-      definition: bookingProducer
+      definition: bookingProducer;soldTicketEventHandler
     stream:
       kafka:
         binder:
           brokers: localhost:9092
           auto-create-topics: true
+        bindings:
+          soldTicketEventHandler-in-0:
+            producer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
       default:
         contentType: application/json
       bindings:
         bookingProducer-out-0:
           destination: booking-events-topic
+        soldTicketEventHandler-in-0:
+          destination: payment-ticket-events-topic
+          group: booking-completed-group
+
 
 eureka:
   instance:

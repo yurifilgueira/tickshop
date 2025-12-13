@@ -1,6 +1,7 @@
-package com.tickshop.tickets.events.impl.events;
+package com.tickshop.booking.events.tickets;
 
-import com.tickshop.tickets.events.DomainEvent;
+
+import com.tickshop.booking.events.DomainEvent;
 
 import java.time.Instant;
 import java.util.UUID;

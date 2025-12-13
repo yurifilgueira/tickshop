@@ -4,12 +4,14 @@ import com.tickshop.booking.events.impl.publishers.BookingEventPublisher;
 import com.tickshop.booking.model.dtos.requests.CreateBookingRequest;
 import com.tickshop.booking.model.dtos.response.CreateBookingResponse;
 import com.tickshop.booking.model.enities.Booking;
+import com.tickshop.booking.model.enums.BookingStatus;
 import com.tickshop.booking.model.mappers.BookingMapper;
 import com.tickshop.booking.repositories.BookingRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.awt.print.Book;
+import java.util.UUID;
 
 @Service
 public class BookingService {
@@ -31,4 +33,13 @@ public class BookingService {
             publisher.publish(event);
         });
     }
+
+    public Mono<Void> confirmBooking(UUID bookingId) {
+        return bookingRepository.findById(bookingId)
+                .flatMap(booking -> {
+                    booking.setStatus(BookingStatus.COMPLETED);
+                    return bookingRepository.save(booking);
+                }).then();
+    }
+
 }

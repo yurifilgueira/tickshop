@@ -1,11 +1,11 @@
-package com.tickshop.tickets.events.impl.events;
+package com.tickshop.payment.events.ticket;
 
-import com.tickshop.tickets.events.DomainEvent;
+import com.tickshop.payment.events.DomainEvent;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public sealed interface TicketEvent extends DomainEvent permits TicketEvent.TicketReserved, TicketEvent.TicketReservationFailed, TicketEvent.TicketSold {
+public sealed interface TicketEvent extends DomainEvent {
 
     record TicketReserved(
             UUID bookingId,

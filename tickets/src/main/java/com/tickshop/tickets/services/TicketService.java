@@ -50,4 +50,14 @@ public class TicketService {
                 });
     }
 
+    public Flux<TicketDto> releaseTicket(UUID uuid) {
+        return ticketRepository.findByBookingId(uuid)
+                .flatMap(ticket -> {
+
+                    log.info("Ticket################ {} liberado", ticket.getTicketId());
+                    ticket.sell();
+                    return ticketRepository.save(ticket)
+                            .map(TicketMapper::entityToDto);
+                });
+    }
 }

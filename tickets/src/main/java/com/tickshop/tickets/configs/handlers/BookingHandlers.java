@@ -20,12 +20,12 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Configuration
-public class ConfigFunctions {
+public class BookingHandlers {
 
-    private static final Logger log = LoggerFactory.getLogger(ConfigFunctions.class);
+    private static final Logger log = LoggerFactory.getLogger(BookingHandlers.class);
     private final TicketService ticketService;
 
-    public ConfigFunctions(TicketService ticketService) {
+    public BookingHandlers(TicketService ticketService) {
         this.ticketService = ticketService;
     }
 

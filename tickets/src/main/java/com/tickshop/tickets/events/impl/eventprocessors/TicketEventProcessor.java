@@ -10,7 +10,7 @@ public interface TicketEventProcessor<R extends DomainEvent> extends EventProces
     @Override
     default Mono<R> process(TicketEvent event) {
         return switch (event) {
-            case TicketEvent.TicketReleased ticketReleased -> this.handle(ticketReleased);
+            case TicketEvent.TicketSold ticketSold -> this.handle(ticketSold);
             case TicketEvent.TicketReservationFailed ticketReservationFailed -> this.handle(ticketReservationFailed);
             case TicketEvent.TicketReserved ticketReserved -> this.handle(ticketReserved);
         };
@@ -18,6 +18,6 @@ public interface TicketEventProcessor<R extends DomainEvent> extends EventProces
 
     Mono<R> handle(TicketEvent.TicketReserved ticketReserved);
     Mono<R> handle(TicketEvent.TicketReservationFailed ticketReservationFailed);
-    Mono<R> handle(TicketEvent.TicketReleased ticketReleased);
+    Mono<R> handle(TicketEvent.TicketSold ticketSold);
 
 }

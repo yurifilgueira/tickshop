@@ -8,7 +8,34 @@ spring:
     url: r2dbc:postgresql://localhost:5432/payment-service-db
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-
+  sql:
+    init:
+      mode: always
+  cloud:
+    function:
+      definition: ticketReservedHandler
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+          auto-create-topics: true
+          consumer-properties:
+            'spring.json.trusted.packages': '*'
+            'spring.json.use.type.headers': false
+        bindings:
+          ticketReservedHandler-out-0:
+            producer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
+      default:
+        contentType: application/json
+      bindings:
+        ticketReservedHandler-in-0:
+          destination: ticket-events-topic
+          group: payment-service-group
+        ticketReservedHandler-out-0:
+          destination: payment-events-topic
+          group: payment-service-group
 eureka:
   instance:
     prefer-ip-address: true
