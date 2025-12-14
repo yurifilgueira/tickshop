@@ -23,7 +23,7 @@ spring:
             key.serializer: org.apache.kafka.common.serialization.StringSerializer
       bindings:
         bookingEventProcessor-in-0:
-          destination: booking-events-topic
+          destination: booking-events-topic,booking-canceled-topic
           group: booking-ticket-service-group
           content-type: application/json
         bookingEventProcessor-out-0:
@@ -36,7 +36,6 @@ spring:
         paymentConfirmationProcessor-out-0:
           destination: payment-ticket-events-topic
           content-type: application/json
-
 
 #logging:
 #  level:

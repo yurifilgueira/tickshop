@@ -50,16 +50,12 @@ public class Ticket implements Persistable<UUID>, Serializable {
         this.bookingId = bookingId;
     }
 
-    public void release() {
+    public void free() {
         this.status = TicketStatus.AVAILABLE;
         this.bookingId = null;
     }
 
     public void sell() {
-        this.status = TicketStatus.SOLD;
-    }
-
-    public void confirm() {
         this.status = TicketStatus.SOLD;
     }
 

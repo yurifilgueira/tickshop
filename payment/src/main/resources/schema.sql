@@ -6,3 +6,9 @@ CREATE TABLE IF NOT EXISTS payments (
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id UUID PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    balance DECIMAL(19, 2) NOT NULL
+);

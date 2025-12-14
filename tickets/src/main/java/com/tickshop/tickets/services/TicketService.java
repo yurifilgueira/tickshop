@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -50,14 +51,30 @@ public class TicketService {
                 });
     }
 
-    public Flux<TicketDto> releaseTicket(UUID uuid) {
-        return ticketRepository.findByBookingId(uuid)
+    @Transactional
+    public Mono<List<TicketDto>> launchTicket(UUID bookingId) {
+        return ticketRepository.findByBookingId(bookingId)
                 .flatMap(ticket -> {
-
-                    log.info("Ticket################ {} liberado", ticket.getTicketId());
                     ticket.sell();
-                    return ticketRepository.save(ticket)
-                            .map(TicketMapper::entityToDto);
+                    return ticketRepository.save(ticket);
+                })
+                .map(TicketMapper::entityToDto)
+                .collectList();
+    }
+
+    @Transactional
+    public Mono<List<Ticket>> freeTickets(UUID bookingId) {
+        return ticketRepository.findByBookingId(bookingId)
+                .map(ticket -> {
+                    ticket.free();
+                    return ticket;
+                })
+                .collectList()
+                .flatMap(tickets -> {
+                    if (tickets.isEmpty()) {
+                        return Mono.empty();
+                    }
+                    return ticketRepository.saveAll(tickets).collectList();
                 });
     }
 }

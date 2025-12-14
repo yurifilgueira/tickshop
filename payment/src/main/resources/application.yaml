@@ -13,7 +13,7 @@ spring:
       mode: always
   cloud:
     function:
-      definition: ticketReservedHandler
+      definition: ticketReservedHandler;bookingEventProcessor
     stream:
       kafka:
         binder:
@@ -26,6 +26,10 @@ spring:
           content-type: application/json
         ticketReservedHandler-out-0:
           destination: payment-events-topic
+          group: payment-service-group
+          content-type: application/json
+        bookingEventProcessor-in-0:
+          destination: booking-canceled-topic
           group: payment-service-group
           content-type: application/json
 

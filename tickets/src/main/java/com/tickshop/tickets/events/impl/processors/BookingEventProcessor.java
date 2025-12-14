@@ -1,11 +1,9 @@
-package com.tickshop.tickets.events.impl.eventprocessors;
+package com.tickshop.tickets.events.impl.processors;
 
 import com.tickshop.tickets.events.DomainEvent;
 import com.tickshop.tickets.events.EventProcessor;
 import com.tickshop.tickets.events.booking.events.BookingEvent;
-import com.tickshop.tickets.events.impl.events.TicketEvent;
 import org.slf4j.Logger;
-import org.springframework.messaging.Message;
 import reactor.core.publisher.Mono;
 
 public interface BookingEventProcessor<R extends DomainEvent> extends EventProcessor<BookingEvent, R> {

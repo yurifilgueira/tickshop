@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.tickshop.payment.events.DomainEvent;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -21,18 +22,24 @@ public sealed interface TicketEvent extends DomainEvent permits TicketEvent.Tick
     record TicketReserved(
             UUID bookingId,
             UUID ticketId,
+            UUID customerId,
+            BigDecimal amount,
             Instant createdAt
     ) implements TicketEvent {}
 
     record TicketReservationFailed(
             UUID bookingId,
+            UUID customerId,
             String reason,
+            BigDecimal amount,
             Instant createdAt
     ) implements TicketEvent {}
 
     record TicketSold(
             UUID bookingId,
             UUID ticketId,
+            UUID customerId,
+            BigDecimal amount,
             Instant createdAt
     ) implements TicketEvent {}
 }

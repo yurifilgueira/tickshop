@@ -13,6 +13,11 @@ public class BookingStreamsConfig {
 
     @Bean
     public Supplier<Flux<BookingEvent>> bookingProducer(BookingEventPublisher publisher) {
-        return publisher::getFlux;
+        return publisher::getGeneralFlux;
+    }
+
+    @Bean
+    public Supplier<Flux<BookingEvent.BookingCancelled>> bookingCanceledProducer(BookingEventPublisher publisher) {
+        return publisher::getCancellationFlux;
     }
 }

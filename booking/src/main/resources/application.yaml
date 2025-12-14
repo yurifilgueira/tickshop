@@ -13,12 +13,15 @@ spring:
       mode: always
   cloud:
     function:
-      definition: bookingProducer;soldTicketEventHandler
+      definition: bookingProducer;bookingCanceledProducer;soldTicketEventHandler
     stream:
       kafka:
         binder:
           brokers: localhost:9092
           auto-create-topics: true
+          configuration:
+            spring.json.trusted.packages: "*"
+            spring.json.use.type.headers: false
       bindings:
         bookingProducer-out-0:
           destination: booking-events-topic
@@ -27,7 +30,10 @@ spring:
           destination: payment-ticket-events-topic
           group: booking-completed-group
           content-type: application/json
-
+        bookingCanceledProducer-out-0:
+          destination: booking-canceled-topic
+          group: booking-canceled-group
+          content-type: application/json
 
 eureka:
   instance:

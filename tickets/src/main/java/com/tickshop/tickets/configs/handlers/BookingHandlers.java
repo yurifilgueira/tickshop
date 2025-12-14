@@ -1,24 +1,22 @@
 package com.tickshop.tickets.configs.handlers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tickshop.tickets.events.booking.events.BookingEvent;
-import com.tickshop.tickets.events.impl.eventprocessors.BookingEventProcessor;
+import com.tickshop.tickets.events.impl.processors.BookingEventProcessor;
 import com.tickshop.tickets.events.impl.events.TicketEvent;
 import com.tickshop.tickets.events.impl.events.TicketEvent.TicketReservationFailed;
 import com.tickshop.tickets.events.impl.events.TicketEvent.TicketReserved;
 import com.tickshop.tickets.services.TicketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.UUID;
 import java.util.function.Function;
 
 @Configuration
@@ -26,9 +24,11 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(BookingHandlers.class);
     private final TicketService ticketService;
+    private StreamBridge streamBridge;
 
-    public BookingHandlers(TicketService ticketService) {
+    public BookingHandlers(TicketService ticketService, StreamBridge streamBridge) {
         this.ticketService = ticketService;
+        this.streamBridge = streamBridge;
     }
 
     @Bean
@@ -51,22 +51,29 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
                     return Mono.just((TicketEvent) new TicketReserved(
                             e.bookingId(),
                             tickets.get(0).ticketId(),
+                            e.customerId(),
+                            e.price(),
                             Instant.now()
                     ));
                 })
                 .onErrorResume(ex -> {
                     log.warn("Error reserving tickets for booking {}: {}", e.bookingId(), ex.getMessage());
-                    return Mono.just(new TicketReservationFailed(
-                            e.bookingId(),
-                            ex.getMessage() != null ? ex.getMessage() : "Unknown error",
-                            Instant.now()
-                    ));
+
+                    TicketEvent event = new TicketReservationFailed(e.bookingId(), ex.getMessage(), Instant.now());
+                    streamBridge.send("paymentConfirmationProcessor-out-0", MessageBuilder.withPayload(event).build());
+
+                    return Mono.empty();
                 });
     }
 
     @Override
-    public Mono<TicketEvent> handle(BookingEvent.BookingCancelled ticketReservationFailed) {
-        return null;
+    public Mono<TicketEvent> handle(BookingEvent.BookingCancelled bookingCancelled) {
+        return ticketService.freeTickets(bookingCancelled.bookingId())
+                .map(_ -> new TicketReservationFailed(
+                        bookingCancelled.bookingId(),
+                        bookingCancelled.reason(),
+                        Instant.now()
+                )).then(Mono.empty());
     }
 
     @Override

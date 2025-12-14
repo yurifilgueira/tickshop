@@ -4,10 +4,9 @@ import com.tickshop.booking.model.dtos.requests.CreateBookingRequest;
 import com.tickshop.booking.model.enities.Booking;
 import com.tickshop.booking.services.BookingService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping(value = "/bookings")
@@ -25,5 +24,10 @@ public class BookingController {
         var response = bookingService.save(bookingRequest);
 
         return ResponseEntity.accepted().body(response);
+    }
+
+    @PostMapping("/cancel")
+    public ResponseEntity<?> cancelBooking(@RequestParam("id") UUID bookingId) {
+        return ResponseEntity.accepted().body(bookingService.cancelBooking(bookingId));
     }
 }

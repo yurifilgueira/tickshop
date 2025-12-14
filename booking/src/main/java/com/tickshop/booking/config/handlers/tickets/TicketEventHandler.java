@@ -1,5 +1,6 @@
 package com.tickshop.booking.config.handlers.tickets;
 
+import com.tickshop.booking.events.processors.TicketEventProcessor;
 import com.tickshop.booking.events.tickets.TicketEvent;
 import com.tickshop.booking.services.BookingService;
 import org.reactivestreams.Publisher;
@@ -14,7 +15,7 @@ import reactor.core.publisher.Mono;
 import java.util.function.Consumer;
 
 @Configuration
-public class TicketEventHandler {
+public class TicketEventHandler implements TicketEventProcessor<Void> {
 
     private final BookingService bookingService;
     private Logger log = LoggerFactory.getLogger(TicketEventHandler.class);
@@ -24,17 +25,21 @@ public class TicketEventHandler {
     }
 
     @Bean
-    public Consumer<Flux<Message<TicketEvent.TicketSold>>> soldTicketEventHandler() {
+    public Consumer<Flux<Message<TicketEvent>>> soldTicketEventHandler() {
         return flux -> flux
                 .doOnNext(msg -> log.info("Sold ticket event received: {}", msg.getPayload()))
-                .flatMap(this::processMessage)
+                .map(Message::getPayload)
+                .flatMap(this::process)
                 .subscribe();
     }
 
-    private Mono<Void> processMessage(Message<TicketEvent.TicketSold> ticketSoldMessage) {
-        TicketEvent.TicketSold ticketSoldEvent = ticketSoldMessage.getPayload();
-
-        return  bookingService.confirmBooking(ticketSoldEvent.bookingId());
+    @Override
+    public Mono<Void> handle(TicketEvent.TicketReservationFailed ticketReservationFailed) {
+        return bookingService.cancelBooking(ticketReservationFailed);
     }
 
+    @Override
+    public Mono<Void> handle(TicketEvent.TicketSold ticketSold) {
+        return  bookingService.confirmBooking(ticketSold.bookingId());
+    }
 }

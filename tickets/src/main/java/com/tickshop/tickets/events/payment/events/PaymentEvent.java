@@ -23,6 +23,7 @@ public sealed interface PaymentEvent extends DomainEvent permits PaymentEvent.Pa
     record PaymentProcessed(
             UUID bookingId,
             UUID paymentId,
+            UUID customerId,
             BigDecimal total,
             Instant createdAt
     ) implements PaymentEvent {}

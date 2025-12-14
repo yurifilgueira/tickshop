@@ -2,6 +2,7 @@ package com.tickshop.tickets.configs.handlers;
 
 import com.tickshop.tickets.events.impl.events.TicketEvent;
 import com.tickshop.tickets.events.payment.events.PaymentEvent;
+import com.tickshop.tickets.events.payment.events.processors.PaymentEventProcessor;
 import com.tickshop.tickets.services.TicketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ import java.time.Instant;
 import java.util.function.Function;
 
 @Configuration
-public class PaymentHandlers {
+public class PaymentHandlers implements PaymentEventProcessor<TicketEvent> {
 
     private final TicketService ticketService;
     Logger log = LoggerFactory.getLogger(PaymentHandlers.class);
@@ -27,27 +28,44 @@ public class PaymentHandlers {
     }
 
     @Bean
-    public Function<Flux<Message<PaymentEvent.PaymentProcessed>>, Flux<Message<TicketEvent>>> paymentConfirmationProcessor() {
+    public Function<Flux<Message<PaymentEvent>>, Flux<Message<TicketEvent>>> paymentConfirmationProcessor() {
         return flux -> flux
-                .doOnNext(msg -> log.info("Payment confirmed, launching ticket: {}", msg.getPayload().bookingId()))
-                .flatMap(this::launchTicket);
+                .map(Message::getPayload)
+                .flatMap(this::process)
+                .map(responseEvent -> MessageBuilder.withPayload(responseEvent).build());
     }
 
-    private Flux<Message<TicketEvent>> launchTicket(Message<PaymentEvent.PaymentProcessed> message) {
-        PaymentEvent.PaymentProcessed payload = message.getPayload();
-
-        return ticketService.releaseTicket(payload.bookingId())
-                .flatMap(ticket -> {
-                    TicketEvent launchedEvent = new TicketEvent.TicketSold(
-                            payload.bookingId(),
-                            payload.paymentId(),
+    @Override
+    public Mono<TicketEvent> handle(PaymentEvent.PaymentProcessed paymentProcessed) {
+        return ticketService.launchTicket(paymentProcessed.bookingId())
+                .doOnNext(tickets -> log.info("Payment confirmed, launching ticket: {}", tickets))
+                .flatMap(soldTickets -> {
+                    if (soldTickets.isEmpty()) {
+                        log.warn("No tickets found {}", paymentProcessed.bookingId());
+                        return Mono.empty();
+                    }
+                    return Mono.just((TicketEvent) new TicketEvent.TicketSold(
+                            paymentProcessed.bookingId(),
+                            paymentProcessed.customerId(),
+                            paymentProcessed.paymentId(),
                             Instant.now()
-                    );
-
-                    return Mono.just(MessageBuilder.withPayload(launchedEvent)
-                            .setHeader(KafkaHeaders.KEY, ((TicketEvent.TicketSold) launchedEvent).bookingId().toString())
-                            .build());
+                    ));
                 });
     }
 
+    @Override
+    public Mono<TicketEvent> handle(PaymentEvent.PaymentDeclined paymentDeclined) {
+        return ticketService.freeTickets(paymentDeclined.bookingId())
+                .doOnNext(tickets -> log.info("Payment declined, freeing tickets..."))
+                .map(_ -> (TicketEvent) new TicketEvent.TicketReservationFailed(
+                        paymentDeclined.bookingId(),
+                        paymentDeclined.reason(),
+                        Instant.now()
+                )).switchIfEmpty(Mono.defer(Mono::empty));
+    }
+
+    @Override
+    public Mono<TicketEvent> handle(PaymentEvent.PaymentRefunded paymentRefunded) {
+        return null;
+    }
 }
