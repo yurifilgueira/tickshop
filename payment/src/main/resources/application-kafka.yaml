@@ -15,6 +15,7 @@ spring:
     function:
       definition: ticketReservedHandler;bookingEventProcessor
     stream:
+      default-binder: kafka
       kafka:
         binder:
           brokers: localhost:9092

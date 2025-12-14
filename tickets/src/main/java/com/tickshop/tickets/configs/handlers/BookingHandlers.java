@@ -24,10 +24,11 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(BookingHandlers.class);
     private final TicketService ticketService;
-    // Removido StreamBridge: não precisamos dele aqui
+    private final StreamBridge streamBridge;
 
-    public BookingHandlers(TicketService ticketService) {
+    public BookingHandlers(TicketService ticketService, StreamBridge streamBridge) {
         this.ticketService = ticketService;
+        this.streamBridge = streamBridge;
     }
 
     @Bean
@@ -45,7 +46,6 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
                     } else {
                         routingKey = "ticket.audit";
                     }
-
                     return MessageBuilder.withPayload(event)
                             .setHeader("routingKey", routingKey)
                             .build();
@@ -70,11 +70,13 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
                 })
                 .onErrorResume(ex -> {
                     log.warn("Error reserving tickets for booking {}: {}", e.bookingId(), ex.getMessage());
-                    return Mono.just(new TicketReservationFailed(
-                            e.bookingId(),
-                            ex.getMessage(),
-                            Instant.now()
-                    ));
+
+                    TicketEvent event = new TicketReservationFailed(e.bookingId(), ex.getMessage(), Instant.now());
+                    streamBridge.send("paymentConfirmationProcessor-out-0", MessageBuilder.withPayload(event)
+                            .setHeader("routingKey", "ticket.failed")
+                            .build());
+
+                    return Mono.empty();
                 });
     }
 
