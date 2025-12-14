@@ -5,6 +5,7 @@ import com.tickshop.booking.model.enities.Booking;
 import com.tickshop.booking.services.BookingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
@@ -27,7 +28,13 @@ public class BookingController {
     }
 
     @PostMapping("/cancel")
-    public ResponseEntity<?> cancelBooking(@RequestParam("id") UUID bookingId) {
-        return ResponseEntity.accepted().body(bookingService.cancelBooking(bookingId));
+    public Mono<ResponseEntity<Object>> cancelBooking(@RequestParam("id") UUID bookingId) {
+        return bookingService.cancelBookingAndPublish(bookingId)
+                .map(response -> ResponseEntity.accepted().body((Object) response))
+                .onErrorResume(ex -> Mono.just(
+                        ResponseEntity
+                                .badRequest()
+                                .body("Error canceling: " + ex.getMessage())
+                ));
     }
 }

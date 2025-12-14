@@ -50,7 +50,7 @@ public class PaymentHandlers implements PaymentEventProcessor<TicketEvent> {
                             paymentProcessed.paymentId(),
                             Instant.now()
                     ));
-                });
+                }).then(Mono.empty());
     }
 
     @Override

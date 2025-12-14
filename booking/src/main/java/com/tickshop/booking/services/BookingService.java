@@ -3,6 +3,8 @@ package com.tickshop.booking.services;
 import com.tickshop.booking.events.impl.events.BookingEvent;
 import com.tickshop.booking.events.impl.publishers.BookingEventPublisher;
 import com.tickshop.booking.events.tickets.TicketEvent;
+import com.tickshop.booking.exceptions.BookingAlreadyCanceledException;
+import com.tickshop.booking.exceptions.BookingNotFoundException;
 import com.tickshop.booking.model.dtos.requests.CreateBookingRequest;
 import com.tickshop.booking.model.dtos.response.BookingCanceledResponse;
 import com.tickshop.booking.model.dtos.response.CreateBookingResponse;
@@ -13,7 +15,6 @@ import com.tickshop.booking.repositories.BookingRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.awt.print.Book;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -47,17 +48,23 @@ public class BookingService {
                 }).then();
     }
 
-    public Mono<Void> cancelBooking(TicketEvent.TicketReservationFailed event) {
-        return bookingRepository.findById(event.bookingId())
+    public Mono<Void> cancelBooking(UUID bookingId) {
+        return bookingRepository.findById(bookingId)
                 .flatMap(booking -> {
                     booking.setStatus(BookingStatus.CANCELLED);
                     return bookingRepository.save(booking);
                 }).then();
     }
 
-    public Mono<BookingCanceledResponse> cancelBooking(UUID bookingId) {
+    public Mono<BookingCanceledResponse> cancelBookingAndPublish(UUID bookingId) {
         return bookingRepository.findById(bookingId)
+                .switchIfEmpty(Mono.error(new BookingNotFoundException("Booking not found")))
                 .flatMap(booking -> {
+
+                    if (BookingStatus.CANCELLED.equals(booking.getStatus())) {
+                        return Mono.error(new BookingAlreadyCanceledException("Booking is already canceled"));
+                    }
+
                     booking.setStatus(BookingStatus.CANCELLED);
                     return bookingRepository.save(booking).map(b ->
                             new BookingCanceledResponse(bookingId, BOOKING_CANCELED_BY_CUSTOMER, "Booking canceled successfully"));

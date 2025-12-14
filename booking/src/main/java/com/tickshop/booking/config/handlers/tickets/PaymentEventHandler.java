@@ -1,9 +1,8 @@
 package com.tickshop.booking.config.handlers.tickets;
 
-import com.tickshop.booking.events.processors.TicketEventProcessor;
-import com.tickshop.booking.events.tickets.TicketEvent;
+import com.tickshop.booking.events.processors.PaymentEventProcessor;
 import com.tickshop.booking.services.BookingService;
-import org.reactivestreams.Publisher;
+import com.tickshop.booking.events.payment.PaymentEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -15,17 +14,17 @@ import reactor.core.publisher.Mono;
 import java.util.function.Consumer;
 
 @Configuration
-public class TicketEventHandler implements TicketEventProcessor<Void> {
+public class PaymentEventHandler implements PaymentEventProcessor<Void> {
 
     private final BookingService bookingService;
-    private final Logger log = LoggerFactory.getLogger(TicketEventHandler.class);
+    private final Logger log = LoggerFactory.getLogger(PaymentEventHandler.class);
 
-    public TicketEventHandler(BookingService bookingService) {
+    public PaymentEventHandler(BookingService bookingService) {
         this.bookingService = bookingService;
     }
 
     @Bean
-    public Consumer<Flux<Message<TicketEvent>>> ticketEventProcessor() {
+    public Consumer<Flux<Message<PaymentEvent>>> paymentEventProcessor() {
         return flux -> flux
                 .doOnNext(msg -> log.info("Sold ticket event received: {}", msg.getPayload()))
                 .map(Message::getPayload)
@@ -34,12 +33,12 @@ public class TicketEventHandler implements TicketEventProcessor<Void> {
     }
 
     @Override
-    public Mono<Void> handle(TicketEvent.TicketReservationFailed ticketReservationFailed) {
-        return bookingService.cancelBooking(ticketReservationFailed.bookingId());
+    public Mono<Void> handle(PaymentEvent.PaymentProcessed paymentProcessed) {
+        return bookingService.confirmBooking(paymentProcessed.bookingId());
     }
 
     @Override
-    public Mono<Void> handle(TicketEvent.TicketSold ticketSold) {
-        return  bookingService.confirmBooking(ticketSold.bookingId());
+    public Mono<Void> handle(PaymentEvent.PaymentDeclined paymentDeclined) {
+        return bookingService.cancelBooking(paymentDeclined.bookingId()).then();
     }
 }
