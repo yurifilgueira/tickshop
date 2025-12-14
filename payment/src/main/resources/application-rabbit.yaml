@@ -1,0 +1,59 @@
+server:
+  port: 9091
+
+spring:
+  application:
+    name: payment
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/payment-service-db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  sql:
+    init:
+      mode: always
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  cloud:
+    function:
+      definition: ticketReservedHandler;bookingEventProcessor
+    stream:
+      default-binder: rabbit
+      bindings:
+        ticketReservedHandler-in-0:
+          destination: ticket-events-exchange
+          group: payment-ticket-queue
+          content-type: application/json
+
+        ticketReservedHandler-out-0:
+          destination: payment-events-exchange
+          content-type: application/json
+
+        bookingEventProcessor-in-0:
+          destination: booking-events-exchange
+          group: payment-booking-queue
+          content-type: application/json
+
+      rabbit:
+        bindings:
+          ticketReservedHandler-in-0:
+            consumer:
+              bindingRoutingKey: 'ticket.reserved'
+          bookingEventProcessor-in-0:
+            consumer:
+              bindingRoutingKey: 'booking.cancelled'
+              autoBindDlq: true
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://server1:8761/eureka/,http://server2:8762/eureka/,http://server3:8763/eureka/

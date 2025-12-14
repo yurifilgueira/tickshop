@@ -1,0 +1,65 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: booking
+  
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/booking-service-db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  sql:
+    init:
+      mode: always
+  
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  cloud:
+    function:
+      definition: bookingProducer;bookingCanceledProducer;ticketEventProcessor;paymentEventProcessor
+    stream:
+      default-binder: rabbit
+      bindings:
+        bookingProducer-out-0:
+          destination: booking-events-exchange
+          content-type: application/json
+        bookingCanceledProducer-out-0:
+          destination: booking-events-exchange
+          content-type: application/json
+        ticketEventProcessor-in-0:
+          destination: payment-ticket-events-exchange
+          group: booking-completion-queue
+          content-type: application/json
+        paymentEventProcessor-in-0:
+          destination: payment-events-exchange
+          group: booking-payment-updates-queue
+          content-type: application/json
+
+      rabbit:
+        bindings:
+          bookingProducer-out-0:
+            producer:
+              routingKeyExpression: "'booking.created'"
+          bookingCanceledProducer-out-0:
+            producer:
+              routingKeyExpression: "'booking.cancelled'"
+          ticketEventProcessor-in-0:
+            consumer:
+              bindingRoutingKey: 'ticket.confirmed'
+          paymentEventProcessor-in-0:
+            consumer:
+              bindingRoutingKey: 'payment.failed'
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://server1:8761/eureka/,http://server2:8762/eureka/,http://server3:8763/eureka/

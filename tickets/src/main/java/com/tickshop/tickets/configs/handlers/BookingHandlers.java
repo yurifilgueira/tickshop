@@ -24,11 +24,10 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(BookingHandlers.class);
     private final TicketService ticketService;
-    private StreamBridge streamBridge;
+    // Removido StreamBridge: não precisamos dele aqui
 
-    public BookingHandlers(TicketService ticketService, StreamBridge streamBridge) {
+    public BookingHandlers(TicketService ticketService) {
         this.ticketService = ticketService;
-        this.streamBridge = streamBridge;
     }
 
     @Bean
@@ -37,7 +36,20 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
                 .doOnNext(msg -> log.info("Booking Event received {}", msg.getPayload()))
                 .map(Message::getPayload)
                 .flatMap(this::process)
-                .map(responseEvent -> MessageBuilder.withPayload(responseEvent).build());
+                .map(event -> {
+                    String routingKey;
+                    if (event instanceof TicketReserved) {
+                        routingKey = "ticket.reserved";
+                    } else if (event instanceof TicketReservationFailed) {
+                        routingKey = "ticket.failed";
+                    } else {
+                        routingKey = "ticket.audit";
+                    }
+
+                    return MessageBuilder.withPayload(event)
+                            .setHeader("routingKey", routingKey)
+                            .build();
+                });
     }
 
     @Override
@@ -58,24 +70,19 @@ public class BookingHandlers implements BookingEventProcessor<TicketEvent> {
                 })
                 .onErrorResume(ex -> {
                     log.warn("Error reserving tickets for booking {}: {}", e.bookingId(), ex.getMessage());
-
-                    TicketEvent event = new TicketReservationFailed(e.bookingId(), ex.getMessage(), Instant.now());
-                    streamBridge.send("paymentConfirmationProcessor-out-0", MessageBuilder.withPayload(event).build());
-
-                    return Mono.empty();
+                    return Mono.just(new TicketReservationFailed(
+                            e.bookingId(),
+                            ex.getMessage(),
+                            Instant.now()
+                    ));
                 });
     }
 
     @Override
     public Mono<TicketEvent> handle(BookingEvent.BookingCancelled bookingCancelled) {
         return ticketService.freeTickets(bookingCancelled.bookingId())
-                .map(_ -> new TicketReservationFailed(
-                        bookingCancelled.bookingId(),
-                        bookingCancelled.reason(),
-                        Instant.now()
-                )).then(Mono.empty());
+                .then(Mono.empty());
     }
-
     @Override
     public Mono<TicketEvent> handle(BookingEvent.BookingCompleted bookingCompleted) {
         return null;
