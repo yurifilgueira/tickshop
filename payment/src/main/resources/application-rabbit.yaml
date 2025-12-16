@@ -21,33 +21,17 @@ spring:
 
   cloud:
     function:
-      definition: ticketReservedHandler;bookingEventProcessor
+      definition: paymentCommandProcessor
     stream:
       default-binder: rabbit
       bindings:
-        ticketReservedHandler-in-0:
-          destination: ticket-events-exchange
-          group: payment-ticket-queue
+        paymentCommandProcessor-in-0:
+          destination: payment-commands-exchange
+          group: payment-service-group
           content-type: application/json
-
-        ticketReservedHandler-out-0:
-          destination: payment-events-exchange
+        paymentCommandProcessor-out-0:
+          destination: payment-replies-exchange
           content-type: application/json
-
-        bookingEventProcessor-in-0:
-          destination: booking-events-exchange
-          group: payment-booking-queue
-          content-type: application/json
-
-      rabbit:
-        bindings:
-          ticketReservedHandler-in-0:
-            consumer:
-              bindingRoutingKey: 'ticket.reserved'
-          bookingEventProcessor-in-0:
-            consumer:
-              bindingRoutingKey: 'booking.cancelled'
-              autoBindDlq: true
 
 eureka:
   instance:

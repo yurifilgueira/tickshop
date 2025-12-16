@@ -21,39 +21,25 @@ spring:
 
   cloud:
     function:
-      definition: bookingProducer;bookingCanceledProducer;ticketEventProcessor;paymentEventProcessor
+      definition: ticketProducer;paymentProducer;ticketEventProcessor;paymentEventProcessor
     stream:
       default-binder: rabbit
       bindings:
-        bookingProducer-out-0:
-          destination: booking-events-exchange
+        ticketProducer-out-0:
+          destination: ticket-commands-exchange
           content-type: application/json
-        bookingCanceledProducer-out-0:
-          destination: booking-events-exchange
+        paymentProducer-out-0:
+          destination: payment-commands-exchange
           content-type: application/json
         ticketEventProcessor-in-0:
-          destination: payment-ticket-events-exchange
-          group: booking-completion-queue
+          destination: ticket-replies-exchange
+          group: booking-saga-group
           content-type: application/json
         paymentEventProcessor-in-0:
-          destination: payment-events-exchange
-          group: booking-payment-updates-queue
+          destination: payment-replies-exchange
+          group: booking-saga-group
           content-type: application/json
-
-      rabbit:
-        bindings:
-          bookingProducer-out-0:
-            producer:
-              routingKeyExpression: "'booking.created'"
-          bookingCanceledProducer-out-0:
-            producer:
-              routingKeyExpression: "'booking.cancelled'"
-          ticketEventProcessor-in-0:
-            consumer:
-              bindingRoutingKey: 'ticket.confirmed'
-          paymentEventProcessor-in-0:
-            consumer:
-              bindingRoutingKey: 'payment.failed'
+          binder:
 
 eureka:
   instance:

@@ -18,40 +18,17 @@ spring:
     password: guest
   cloud:
     function:
-      definition: bookingEventProcessor;paymentConfirmationProcessor
+      definition: ticketCommandProcessor
     stream:
       default-binder: rabbit
       bindings:
-        bookingEventProcessor-in-0:
-          destination: booking-events-exchange
-          group: booking-ticket-service-queue
+        ticketCommandProcessor-in-0:
+          destination: ticket-commands-exchange
+          group: ticket-service-group
           content-type: application/json
-        bookingEventProcessor-out-0:
-          destination: ticket-events-exchange
+        ticketCommandProcessor-out-0:
+          destination: ticket-replies-exchange
           content-type: application/json
-        paymentConfirmationProcessor-in-0:
-          destination: payment-events-exchange
-          group: payment-ticket-service-queue
-          content-type: application/json
-        paymentConfirmationProcessor-out-0:
-          destination: payment-ticket-events-exchange
-          content-type: application/json
-
-      rabbit:
-        bindings:
-          bookingEventProcessor-in-0:
-            consumer:
-              autoBindDlq: true
-              bindingRoutingKey: 'booking.#'
-          bookingEventProcessor-out-0:
-            producer:
-              routingKeyExpression: headers['routingKey']
-          paymentConfirmationProcessor-in-0:
-            consumer:
-              bindingRoutingKey: 'payment.processed'
-          paymentConfirmationProcessor-out-0:
-            producer:
-              routingKeyExpression: "'ticket.confirmed'"
 
 eureka:
   instance:
