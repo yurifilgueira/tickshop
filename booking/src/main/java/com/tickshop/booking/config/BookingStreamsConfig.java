@@ -1,7 +1,9 @@
 package com.tickshop.booking.config;
 
-import com.tickshop.booking.events.impl.events.BookingEvent;
-import com.tickshop.booking.events.impl.publishers.BookingEventPublisher;
+import com.tickshop.booking.events.commands.PaymentCommand;
+import com.tickshop.booking.events.commands.TicketCommand;
+import com.tickshop.booking.events.publishers.PaymentCommandPublisher;
+import com.tickshop.booking.events.publishers.TicketCommandPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
@@ -12,12 +14,13 @@ import java.util.function.Supplier;
 public class BookingStreamsConfig {
 
     @Bean
-    public Supplier<Flux<BookingEvent>> bookingProducer(BookingEventPublisher publisher) {
+    public Supplier<Flux<TicketCommand>> ticketProducer(TicketCommandPublisher publisher) {
         return publisher::getGeneralFlux;
     }
 
     @Bean
-    public Supplier<Flux<BookingEvent.BookingCancelled>> bookingCanceledProducer(BookingEventPublisher publisher) {
-        return publisher::getCancellationFlux;
+    public Supplier<Flux<PaymentCommand>> paymentProducer(PaymentCommandPublisher publisher) {
+        return publisher::getGeneralFlux;
     }
+
 }

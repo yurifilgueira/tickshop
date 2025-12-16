@@ -1,5 +1,6 @@
 package com.tickshop.payment.services;
 
+import com.tickshop.payment.events.commands.PaymentCommand;
 import com.tickshop.payment.events.ticket.TicketEvent;
 import com.tickshop.payment.model.entities.Payment;
 import com.tickshop.payment.model.enums.PaymentStatus;
@@ -27,13 +28,13 @@ public class PaymentService {
     }
 
     @Transactional
-    public Mono<Payment> processPayment(TicketEvent.TicketReserved ticketReserved) {
-        return customerRepository.findById(ticketReserved.customerId())
+    public Mono<Payment> processPayment(PaymentCommand.ProcessPaymentCommand paymentCommand) {
+        return customerRepository.findById(paymentCommand.customerId())
                 .flatMap(c -> {
-                    BigDecimal amount = ticketReserved.amount();
+                    BigDecimal amount = paymentCommand.amount();
                     if(c.getBalance().compareTo(amount) < 0) {
 
-                        Payment payment = new Payment(ticketReserved.bookingId(), ticketReserved.customerId(), amount);
+                        Payment payment = new Payment(paymentCommand.bookingId(), paymentCommand.customerId(), amount);
                         payment.setStatus(PaymentStatus.DECLINED);
 
                         return paymentRepository.save(payment);
@@ -42,8 +43,8 @@ public class PaymentService {
                     return customerRepository.save(c)
                             .flatMap(_ -> {
                                 Payment payment = new Payment(
-                                        ticketReserved.bookingId(),
-                                        ticketReserved.customerId(),
+                                        paymentCommand.bookingId(),
+                                        paymentCommand.customerId(),
                                         amount
                                 );
                                 payment.setStatus(PaymentStatus.APPROVED);
@@ -54,8 +55,8 @@ public class PaymentService {
     }
 
     @Transactional
-    public Mono<Payment> refundPayment(UUID paymentId) {
-        return paymentRepository.findByBookingId(paymentId)
+    public Mono<Payment> refundPayment(UUID bookingId) {
+        return paymentRepository.findByBookingId(bookingId)
                 .flatMap(payment -> {
                     return customerRepository.findById(payment.getCustomerId())
                             .flatMap(customer -> {

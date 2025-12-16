@@ -1,7 +1,5 @@
 package com.tickshop.booking.events.payment;
 
-
-
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.tickshop.booking.events.DomainEvent;

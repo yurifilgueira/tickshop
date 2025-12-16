@@ -1,9 +1,8 @@
-package com.tickshop.booking.config.handlers.tickets;
+package com.tickshop.booking.config.handlers;
 
 import com.tickshop.booking.events.processors.TicketEventProcessor;
 import com.tickshop.booking.events.tickets.TicketEvent;
 import com.tickshop.booking.services.BookingService;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -27,10 +26,15 @@ public class TicketEventHandler implements TicketEventProcessor<Void> {
     @Bean
     public Consumer<Flux<Message<TicketEvent>>> ticketEventProcessor() {
         return flux -> flux
-                .doOnNext(msg -> log.info("Sold ticket event received: {}", msg.getPayload()))
+                .doOnNext(msg -> log.info("Ticket event received: {}", msg.getPayload()))
                 .map(Message::getPayload)
                 .flatMap(this::process)
                 .subscribe();
+    }
+
+    @Override
+    public Mono<Void> handle(TicketEvent.TicketReserved ticketReserved) {
+        return bookingService.processPayment(ticketReserved);
     }
 
     @Override

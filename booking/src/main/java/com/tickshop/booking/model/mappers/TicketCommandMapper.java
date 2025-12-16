@@ -1,21 +1,18 @@
 package com.tickshop.booking.model.mappers;
 
-import com.tickshop.booking.events.impl.events.BookingEvent;
+import com.tickshop.booking.events.commands.TicketCommand;
 import com.tickshop.booking.model.dtos.requests.CreateBookingRequest;
 import com.tickshop.booking.model.enities.Booking;
 
-import java.time.Instant;
+public class TicketCommandMapper {
 
-public class BookingMapper {
-
-    public static BookingEvent.BookingCreated toBookingCreatedEvent(Booking entity) {
-        return new BookingEvent.BookingCreated(
+    public static TicketCommand.ReserveTicketCommand toReserveTicketCommand(Booking entity) {
+        return new TicketCommand.ReserveTicketCommand(
                 entity.getBookingId(),
                 entity.getCustomerId(),
                 entity.getShowId(),
-                entity.getQuantity(),
                 entity.getAmount(),
-                Instant.now()
+                entity.getQuantity()
         );
     }
 

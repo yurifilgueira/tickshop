@@ -29,7 +29,7 @@ public class BookingController {
 
     @PostMapping("/cancel")
     public Mono<ResponseEntity<Object>> cancelBooking(@RequestParam("id") UUID bookingId) {
-        return bookingService.cancelBookingAndPublish(bookingId)
+        return bookingService.cancelBooking(bookingId)
                 .map(response -> ResponseEntity.accepted().body((Object) response))
                 .onErrorResume(ex -> Mono.just(
                         ResponseEntity

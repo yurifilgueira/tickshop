@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: payment
+    name: payment-service
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/payment-service-db
     username: ${DB_USERNAME}
@@ -13,7 +13,7 @@ spring:
       mode: always
   cloud:
     function:
-      definition: ticketReservedHandler;bookingEventProcessor
+      definition: paymentCommandProcessor
     stream:
       default-binder: kafka
       kafka:
@@ -21,16 +21,12 @@ spring:
           brokers: localhost:9092
           auto-create-topics: true
       bindings:
-        ticketReservedHandler-in-0:
-          destination: ticket-events-topic
+        paymentCommandProcessor-in-0:
+          destination: payment-commands
           group: payment-service-group
           content-type: application/json
-        ticketReservedHandler-out-0:
-          destination: payment-events-topic
-          group: payment-service-group
-          content-type: application/json
-        bookingEventProcessor-in-0:
-          destination: booking-canceled-topic
+        paymentCommandProcessor-out-0:
+          destination: payment-commands-response
           group: payment-service-group
           content-type: application/json
 

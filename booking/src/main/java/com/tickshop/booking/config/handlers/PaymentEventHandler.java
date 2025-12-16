@@ -1,4 +1,4 @@
-package com.tickshop.booking.config.handlers.tickets;
+package com.tickshop.booking.config.handlers;
 
 import com.tickshop.booking.events.processors.PaymentEventProcessor;
 import com.tickshop.booking.services.BookingService;
@@ -26,7 +26,7 @@ public class PaymentEventHandler implements PaymentEventProcessor<Void> {
     @Bean
     public Consumer<Flux<Message<PaymentEvent>>> paymentEventProcessor() {
         return flux -> flux
-                .doOnNext(msg -> log.info("Sold ticket event received: {}", msg.getPayload()))
+                .doOnNext(msg -> log.info("Payment event received: {}", msg.getPayload()))
                 .map(Message::getPayload)
                 .flatMap(this::process)
                 .subscribe();
@@ -34,11 +34,16 @@ public class PaymentEventHandler implements PaymentEventProcessor<Void> {
 
     @Override
     public Mono<Void> handle(PaymentEvent.PaymentProcessed paymentProcessed) {
-        return bookingService.confirmBooking(paymentProcessed.bookingId());
+        return bookingService.sellTicket(paymentProcessed.bookingId());
     }
 
     @Override
     public Mono<Void> handle(PaymentEvent.PaymentDeclined paymentDeclined) {
-        return bookingService.cancelBooking(paymentDeclined.bookingId()).then();
+        return bookingService.cancelBookingAndPublishCancelReservation(paymentDeclined.bookingId()).then();
+    }
+
+    @Override
+    public Mono<Void> handle(PaymentEvent.PaymentRefunded paymentRefunded) {
+        return bookingService.cancelBookingAndPublishCancelReservation(paymentRefunded.bookingId()).then();
     }
 }

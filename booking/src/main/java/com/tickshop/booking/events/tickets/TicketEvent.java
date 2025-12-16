@@ -13,10 +13,19 @@ import java.util.UUID;
         property = "eventType"
 )
 @JsonSubTypes({
+        @JsonSubTypes.Type(value = TicketEvent.TicketReserved.class, name = "TicketReserved"),
         @JsonSubTypes.Type(value = TicketEvent.TicketReservationFailed.class, name = "TicketReservationFailed"),
         @JsonSubTypes.Type(value = TicketEvent.TicketSold.class, name = "TicketSold")
 })
-public sealed interface TicketEvent extends DomainEvent permits TicketEvent.TicketReservationFailed, TicketEvent.TicketSold {
+public sealed interface TicketEvent permits TicketEvent.TicketReserved, TicketEvent.TicketReservationFailed, TicketEvent.TicketSold {
+
+    record TicketReserved(
+            UUID bookingId,
+            UUID ticketId,
+            UUID customerId,
+            BigDecimal amount,
+            Instant createdAt
+    ) implements TicketEvent {}
 
     record TicketReservationFailed(
             UUID bookingId,
@@ -25,10 +34,6 @@ public sealed interface TicketEvent extends DomainEvent permits TicketEvent.Tick
     ) implements TicketEvent {}
 
     record TicketSold(
-            UUID bookingId,
-            UUID ticketId,
-            UUID customerId,
-            BigDecimal amount,
-            Instant createdAt
+            UUID bookingId
     ) implements TicketEvent {}
 }

@@ -4,6 +4,16 @@ server:
 spring:
   application:
     name: gateway
+  cloud:
+    loadbalancer:
+      enabled: true
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
 
 eureka:
   instance:
@@ -13,3 +23,9 @@ eureka:
     register-with-eureka: true
     service-url:
       defaultZone: http://server1:8761/eureka/,http://server2:8762/eureka/,http://server3:8763/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: "*"

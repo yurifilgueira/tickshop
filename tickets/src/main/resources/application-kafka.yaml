@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: tickets
+    name: ticket-service
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/ticket-service-db
     username: ${DB_USERNAME}
@@ -13,7 +13,7 @@ spring:
       mode: always
   cloud:
     function:
-      definition: bookingEventProcessor;paymentConfirmationProcessor
+      definition: ticketCommandProcessor
     stream:
       default-binder: kafka
       kafka:
@@ -23,19 +23,12 @@ spring:
           producer-properties:
             key.serializer: org.apache.kafka.common.serialization.StringSerializer
       bindings:
-        bookingEventProcessor-in-0:
-          destination: booking-events-topic,booking-canceled-topic
+        ticketCommandProcessor-in-0:
+          destination: ticket-commands
           group: booking-ticket-service-group
           content-type: application/json
-        bookingEventProcessor-out-0:
-          destination: ticket-events-topic
-          content-type: application/json
-        paymentConfirmationProcessor-in-0:
-          content-type: application/json
-          destination: payment-events-topic
-          group: payment-ticket-service-group
-        paymentConfirmationProcessor-out-0:
-          destination: payment-ticket-events-topic
+        ticketCommandProcessor-out-0:
+          destination: ticket-commands-response
           content-type: application/json
 
 #logging:
