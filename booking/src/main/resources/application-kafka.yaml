@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: booking
+    name: booking-service
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/booking-service-db
     username: ${DB_USERNAME}

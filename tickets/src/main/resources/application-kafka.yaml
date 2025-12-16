@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: tickets
+    name: ticket-service
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/ticket-service-db
     username: ${DB_USERNAME}
