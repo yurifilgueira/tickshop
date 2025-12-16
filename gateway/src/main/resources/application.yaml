@@ -4,6 +4,16 @@ server:
 spring:
   application:
     name: gateway
+  cloud:
+    loadbalancer:
+      enabled: true
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
 
 eureka:
   instance:
